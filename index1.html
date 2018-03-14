@@ -1,0 +1,320 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+	<style type="text/css">
+		body, html{width: 100%;height: 100%;margin:0;font-family:"微软雅黑";font-size:14px;}
+		#l-map{height:100%;width:100%;}
+		
+		/**.anchorBL{display:none}**/
+	</style>
+	<script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=EgwpFBjcND97yvujo9Ftcf2S"></script>
+	<script src="./jquery-1.12.0.min.js"></script>
+	<title>天美云考勤-打卡工具</title>
+</head>
+<body>
+	<div id="l-map"></div>
+	<div style="border: 1px solid #ccc; width: 100%;  height:autopx; left: 0px; top: 0px;  position: absolute; z-index: 1100; background-color:#fff">
+		<table border="0" cellpadding="1" cellspacing="0" style="width:100%;table-layout:fixed;">
+	    <tr>
+	        <td style="width:60px;" >类型：</td>
+	        <td style="width:100%" >
+	            签卡<input id="signType" type="radio" name="signType" value="0" />
+							外勤<input id="signType" type="radio" name="signType" value="1" />&nbsp;<input type="button" id="signbtn_nc" size="20" value="快速签到(南昌)"  />&nbsp;<input type="button" id="signbtn_bj" size="20" value="快速签到(北京)"  />
+	        </td>
+	    </tr>
+	    <tr>
+	        <td style="width:60px;">手机号:</td>
+	        <td style="width:50%">
+	            <input type="text" id="mobile" size="20" value="18579102688" style="width:84px;" />密码：<input type="password" id="password" size="20" value="111111" style="width:50px;" /><input type="button" id="login" size="20" value="登录"  />
+	        </td>
+	    </tr>
+	    <tr>
+	        <td style="width:60px;" >搜索：</td>
+	        <td style="width:100%" >
+	            <input type="text" id="suggestId" size="20" value="百度" style="width:100%;" />
+	        </td>
+	    </tr>
+	    
+	</table>
+	</div>
+	<div id="searchResultPanel" style="border:1px solid #C0C0C0;width:150px;height:auto; display:none;"></div>
+	
+</body>
+</html>
+<script type="text/javascript">
+		var uid = "";
+		var token = "";
+		
+		// 百度地图API功能
+		function G(id) {
+				return document.getElementById(id);
+		}
+
+		var map = new BMap.Map("l-map", {enableMapClick:false});
+		map.enableScrollWheelZoom();
+	
+
+		var ac = new BMap.Autocomplete(    //建立一个自动完成的对象
+				{"input" : "suggestId"
+				,"location" : map
+		});
+
+		ac.addEventListener("onhighlight", function(e) {  //鼠标放在下拉列表上的事件
+			var str = "";
+			var _value = e.fromitem.value;
+			var value = "";
+			if (e.fromitem.index > -1) {
+					value = _value.province +  _value.city +  _value.district +  _value.street +  _value.business;
+			}    
+			str = "FromItem<br />index = " + e.fromitem.index + "<br />value = " + value;
+			
+			value = "";
+			if (e.toitem.index > -1) {
+					_value = e.toitem.value;
+					value = _value.province +  _value.city +  _value.district +  _value.street +  _value.business;
+			}    
+			str += "<br />ToItem<br />index = " + e.toitem.index + "<br />value = " + value;
+			G("searchResultPanel").innerHTML = str;
+		});
+
+		var myValue;
+		ac.addEventListener("onconfirm", function(e) {    //鼠标点击下拉列表后的事件
+				var _value = e.item.value;
+				myValue = _value.province +  _value.city +  _value.district +  _value.street +  _value.business;
+				G("searchResultPanel").innerHTML ="onconfirm<br />index = " + e.item.index + "<br />myValue = " + myValue;
+				
+				setPlace(map);
+		});
+
+		function setPlace(){
+				map.clearOverlays();    //清除地图上所有覆盖物
+				
+				function myFun(){
+					var pp = local.getResults().getPoi(0).point;    //获取第一个智能搜索的结果
+					map.centerAndZoom(pp, 18);
+					map.addOverlay(new BMap.Marker(pp));    //添加标注
+				}
+				
+				var local = new BMap.LocalSearch(map, { //智能搜索
+						onSearchComplete: myFun
+				});
+				
+				local.search(myValue);
+		}
+	
+		//单击获取点击的经纬度
+		var geoc = new BMap.Geocoder();   
+		
+		map.addEventListener("click",function(e){
+
+		var signType = $("input[name='signType']:checked").val();
+		var address = ""; 
+		geoc.getLocation(e.point, function(rs){
+				var addComp = rs.addressComponents;
+				if (rs.surroundingPois.length > 0) {
+					address = addComp.province + addComp.city + addComp.district + rs.surroundingPois[0].title;
+				}
+				else{
+					address =  rs.address;
+				}
+				
+				if (signType == "0") {
+						if (uid == '' || token == ''){
+								alert('请先登录, 然后再签到!');	
+								return;
+						}
+						$.ajax({  
+			         type: "GET",  
+			         url: "http://appservice.5ikq.com/app/User_CheckinByLocation",  
+			         cache: false,  
+			         data:"logonuid=" + uid + "&token=" + token + "&&position=" + address + "&log="+e.point.lng + "&lat=" + e.point.lat,
+			         async: false,
+			         success: function(data, textStatus, jqXHR)
+						    {
+						        alert(data.msg + address);
+						    },
+						   error: function (jqXHR, textStatus, errorThrown)
+						    {
+						 		    alert('签到失败.');
+						    }
+			     }); 
+			    
+			  }else if (signType == "1") {
+						if (uid == '' || token == ''){
+								alert('请先登录, 然后再签到!');	
+								return;
+						}
+							  	
+						$.ajax({  
+				         type: "GET",  
+				         url: "http://appservice.5ikq.com/app/SignLog_Checkin",  
+				         cache: false,  
+				         data:"logonuid=" + uid + "&token=" + token + "&myposition=" + address + "&log="+e.point.lng + "&lat=" + e.point.lat + "&remark=出差",
+				         async: false,
+				         success: function(data, textStatus, jqXHR)
+							    {
+							        alert(data.msg + address);
+							    },
+							   error: function (jqXHR, textStatus, errorThrown)
+							    {
+							 		    alert('签到失败.');
+							    }
+				        });  
+				   } else{
+				   		alert(address);
+				   }
+			}); 		
+   }); 
+   
+   $("#login").click( function() { 
+   	    var mobile = $("#mobile").val();
+   	    var password = $("#password").val();
+		   	$.ajax({  
+		         type: "GET",  
+		         url: "http://appservice.5ikq.com/app/User_Logon",  
+		         cache: false,  
+		         data:"phone=" + mobile + "&pwd=" + password,
+		         async: false,
+		         success: function(data, textStatus, jqXHR)
+					    {
+					        uid = data.uid;
+					        token = data.token;
+					        alert(data.msg);
+					    },
+					   error: function (jqXHR, textStatus, errorThrown)
+					    {
+					 		    alert('登录失败');
+					    }
+		     });
+   	
+   	}); 
+   
+   
+   $("#signbtn_nc").click( function() { 
+   	    var mobile = $("#mobile").val();
+   	    var password = $("#password").val();
+		   	$.ajax({  
+		         type: "GET",  
+		         url: "http://appservice.5ikq.com/app/User_Logon",  
+		         cache: false,  
+		         data:"phone=" + mobile + "&pwd=" + password,
+		         async: false,
+		         success: function(data, textStatus, jqXHR)
+					    {
+					        uid = data.uid;
+					        token = data.token;
+					        var address="南昌市青山湖区高新大道590号";
+					        var lng="115.9664";
+					        var lat="28.69292";
+					        $.ajax({  
+							         type: "GET",  
+							         url: "http://appservice.5ikq.com/app/User_CheckinByLocation",  
+							         cache: false,  
+							         data:"logonuid=" + uid + "&token=" + token + "&&position=" + address + "&log="+lng + "&lat=" + lat,
+							         async: false,
+							         success: function(data, textStatus, jqXHR)
+										    {
+										        alert(data.msg + address);
+										    },
+										   error: function (jqXHR, textStatus, errorThrown)
+										    {
+										 		    alert('签到失败.');
+										    }
+							     }); 
+					    },
+					   error: function (jqXHR, textStatus, errorThrown)
+					    {
+					 		    alert('登录失败');
+					    }
+		     });
+   	
+   	});   	
+   	
+   $("#signbtn_bj").click( function() { 
+   	    var mobile = $("#mobile").val();
+   	    var password = $("#password").val();
+		   	$.ajax({  
+		         type: "GET",  
+		         url: "http://appservice.5ikq.com/app/User_Logon",  
+		         cache: false,  
+		         data:"phone=" + mobile + "&pwd=" + password,
+		         async: false,
+		         success: function(data, textStatus, jqXHR)
+					    {
+					        uid = data.uid;
+					        token = data.token;
+					        var address="泰豪智能大厦";
+					        var lng="116.523862";
+					        var lat="39.793745";
+					        $.ajax({  
+							         type: "GET",  
+							         url: "http://appservice.5ikq.com/app/User_CheckinByLocation",  
+							         cache: false,  
+							         data:"logonuid=" + uid + "&token=" + token + "&&position=" + address + "&log="+lng + "&lat=" + lat,
+							         async: false,
+							         success: function(data, textStatus, jqXHR)
+										    {
+										        alert(data.msg + address);
+										    },
+										   error: function (jqXHR, textStatus, errorThrown)
+										    {
+										 		    alert('签到失败.');
+										    }
+							     }); 
+					    },
+					   error: function (jqXHR, textStatus, errorThrown)
+					    {
+					 		    alert('登录失败');
+					    }
+		     });
+   	
+   	}); 
+   	   	
+		var myCity = new BMap.LocalCity();
+		var cityName = "";
+		myCity.get(function(result) {
+				cityName = result.name;
+				map.centerAndZoom(cityName, 12);  // 初始化地图,设置城市和地图级别。
+		}); 
+		addMarker('北京市电力公司', 116.396736,39.907071);
+		addMarker('上海市电力公司', 121.544401, 31.230461);
+		addMarker('泰豪信息大厦', 115.9664,28.69292);
+		addMarker('福建电力公司', 119.311801,26.109148);  
+		addMarker('重庆电力公司', 106.545995,29.488602);
+		
+		
+		addMarker('山东电力公司', 117.003369,36.670896); 
+		addMarker('河南电力公司', 113.636215,34.751224);
+		addMarker('江西电力公司', 115.942393,28.697696);
+		
+		addMarker('陕西电力公司', 108.98647,34.265063);
+		addMarker('青海电力公司', 101.763968,36.644549);
+		addMarker('宁夏电力公司', 106.278237,38.463119);
+		addMarker('新疆电力公司', 87.629433,43.832694);
+		
+		addMarker('南方电力公司', 113.325427,23.12123);
+		addMarker('广州市电力公司', 113.335958,23.137175);
+		addMarker('广州市电力公司', 110.363018,20.034673);
+		
+		var top_right_navigation = new BMap.NavigationControl({anchor: BMAP_ANCHOR_BOTTOM_RIGHT, type: BMAP_NAVIGATION_CONTROL_ZOOM });
+		var geolocationControl = new BMap.GeolocationControl();
+  
+		map.addControl(top_right_navigation);   
+		map.addControl(geolocationControl);  
+		
+		function addMarker(title, lng, lat) {
+			var point = new BMap.Point(lng, lat);  
+			var label = new BMap.Label(title,{"offset":new BMap.Size(20,3)}); 
+			label.setStyle({ 
+					color : "#ff0000", 
+					backgroundColor :"0.05",
+					border :"0",
+					fontWeight :"bold" 
+					});
+			var marker = new BMap.Marker(point, {title: title});        // 创建标注  121.492958,31.24458  
+			marker.setLabel(label);
+			map.addOverlay(marker); 
+		}
+</script>
