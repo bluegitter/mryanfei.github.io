@@ -127,7 +127,7 @@
 						}
 						$.ajax({  
 			         type: "GET",  
-			         url: "http://appservice.5ikq.com/app/User_CheckinByLocation",  
+			         url: "http://appservice.checkingcloud.com/app/User_CheckinByLocation",  
 			         cache: false,  
 			         data:"logonuid=" + uid + "&token=" + token + "&&position=" + address + "&log="+e.point.lng + "&lat=" + e.point.lat,
 			         async: false,
@@ -149,7 +149,7 @@
 							  	
 						$.ajax({  
 				         type: "GET",  
-				         url: "http://appservice.5ikq.com/app/SignLog_Checkin",  
+				         url: "http://appservice.checkingcloud.com/app/SignLog_Checkin",  
 				         cache: false,  
 				         data:"logonuid=" + uid + "&token=" + token + "&myposition=" + address + "&log="+e.point.lng + "&lat=" + e.point.lat + "&remark=出差",
 				         async: false,
@@ -173,7 +173,7 @@
    	    var password = $("#password").val();
 		   	$.ajax({  
 		         type: "GET",  
-		         url: "http://appservice.5ikq.com/app/User_Logon",  
+		         url: "http://appservice.checkingcloud.com/app/User_Logon",  
 		         cache: false,  
 		         data:"phone=" + mobile + "&pwd=" + password,
 		         async: false,
@@ -197,7 +197,7 @@
    	    var password = $("#password").val();
 		   	$.ajax({  
 		         type: "GET",  
-		         url: "http://appservice.5ikq.com/app/User_Logon",  
+		         url: "http://appservice.checkingcloud.com/app/User_Logon",  
 		         cache: false,  
 		         data:"phone=" + mobile + "&pwd=" + password,
 		         async: false,
@@ -210,7 +210,7 @@
 					        var lat="28.69292";
 					        $.ajax({  
 							         type: "GET",  
-							         url: "http://appservice.5ikq.com/app/User_CheckinByLocation",  
+							         url: "http://appservice.checkingcloud.com/app/User_CheckinByLocation",  
 							         cache: false,  
 							         data:"logonuid=" + uid + "&token=" + token + "&&position=" + address + "&log="+lng + "&lat=" + lat,
 							         async: false,
@@ -237,7 +237,7 @@
    	    var password = $("#password").val();
 		   	$.ajax({  
 		         type: "GET",  
-		         url: "http://appservice.5ikq.com/app/User_Logon",  
+		         url: "http://appservice.checkingcloud.com/app/User_Logon",  
 		         cache: false,  
 		         data:"phone=" + mobile + "&pwd=" + password,
 		         async: false,
@@ -250,7 +250,7 @@
 					        var lat="39.793745";
 					        $.ajax({  
 							         type: "GET",  
-							         url: "http://appservice.5ikq.com/app/User_CheckinByLocation",  
+							         url: "http://appservice.checkingcloud.com/app/User_CheckinByLocation",  
 							         cache: false,  
 							         data:"logonuid=" + uid + "&token=" + token + "&&position=" + address + "&log="+lng + "&lat=" + lat,
 							         async: false,
